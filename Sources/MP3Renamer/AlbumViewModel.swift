@@ -93,12 +93,12 @@ final class AlbumViewModel: ObservableObject {
                     newTracks[index].trackNumber = String(guessedNumbers[index]!)
                 }
             }
-            album = TextSanitizer.sentenceCaseIfAllCaps(firstMetadata?.album ?? "")
+            album = TextSanitizer.apaTitleCase(firstMetadata?.album ?? "")
             year = firstMetadata?.year ?? ""
-            sharedArtist = TextSanitizer.sentenceCaseIfAllCaps(firstMetadata?.artist ?? "")
+            sharedArtist = TextSanitizer.apaTitleCase(firstMetadata?.artist ?? "")
             for index in newTracks.indices {
-                newTracks[index].artist = TextSanitizer.sentenceCaseIfAllCaps(newTracks[index].artist)
-                newTracks[index].title = TextSanitizer.sentenceCaseIfAllCaps(newTracks[index].title)
+                newTracks[index].artist = TextSanitizer.apaTitleCase(newTracks[index].artist)
+                newTracks[index].title = TextSanitizer.apaTitleCase(newTracks[index].title)
             }
             let image = contents.first { ["png", "jpg", "jpeg"].contains($0.pathExtension.lowercased()) }
             coverData = image.flatMap { try? Data(contentsOf: $0) } ?? firstMetadata?.coverData

@@ -30,11 +30,76 @@ struct Track: Identifiable, Equatable, Sendable {
 }
 
 enum TextSanitizer {
-    static func sentenceCaseIfAllCaps(_ value: String) -> String {
+    /// APA title case: articles, coordinating conjunctions, and prepositions
+    /// of three letters or fewer stay lowercase unless they begin the title or
+    /// follow a subtitle separator. Acronyms within otherwise mixed-case text
+    /// are preserved, while an entirely uppercase tag is normalized as a title.
+    static func apaTitleCase(_ value: String) -> String {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        let letters = trimmed.unicodeScalars.filter { CharacterSet.letters.contains($0) }
-        guard !letters.isEmpty, trimmed == trimmed.uppercased() else { return trimmed }
-        return trimmed.lowercased().prefix(1).uppercased() + trimmed.lowercased().dropFirst()
+        guard trimmed.unicodeScalars.contains(where: { CharacterSet.letters.contains($0) }) else { return trimmed }
+
+        // In an entirely uppercase tag, words such as THE and SONG are source
+        // casing rather than acronyms. Preserve unambiguous acronyms (MP3,
+        // AC/DC, R&B) while normalizing the rest. In mixed-case text, any
+        // uppercase word is treated as deliberate acronym styling.
+        let preserveUppercaseWords = trimmed.unicodeScalars.contains { CharacterSet.lowercaseLetters.contains($0) }
+        var result = ""
+        var word = ""
+        var capitalizeNextWord = true
+
+        func appendFormattedWord() {
+            guard !word.isEmpty else { return }
+            result += titleCaseWord(word, capitalize: capitalizeNextWord, preserveUppercaseWords: preserveUppercaseWords)
+            word = ""
+            capitalizeNextWord = false
+        }
+
+        for character in trimmed {
+            if character.isWhitespace {
+                appendFormattedWord()
+                result.append(character)
+            } else if character == ":" || character == ";" || character == "—" || character == "–" {
+                appendFormattedWord()
+                result.append(character)
+                capitalizeNextWord = true
+            } else {
+                word.append(character)
+            }
+        }
+        appendFormattedWord()
+        return result
+    }
+
+    private static let apaMinorWords: Set<String> = [
+        "a", "an", "the", "and", "as", "at", "but", "by", "for", "if",
+        "in", "nor", "of", "on", "or", "per", "so", "to", "up", "via", "yet"
+    ]
+
+    private static func titleCaseWord(_ word: String, capitalize: Bool, preserveUppercaseWords: Bool) -> String {
+        word.split(separator: "-", omittingEmptySubsequences: false).enumerated().map { index, part in
+            titleCasePart(String(part), capitalize: capitalize && index == 0, preserveUppercaseWords: preserveUppercaseWords)
+        }.joined(separator: "-")
+    }
+
+    private static func titleCasePart(_ part: String, capitalize: Bool, preserveUppercaseWords: Bool) -> String {
+        guard let firstLetter = part.firstIndex(where: { $0.isLetter }),
+              let lastLetter = part.lastIndex(where: { $0.isLetter }) else { return part }
+        let prefix = String(part[..<firstLetter])
+        let core = String(part[firstLetter...lastLetter])
+        let suffix = String(part[part.index(after: lastLetter)...])
+        let lowercasedCore = core.lowercased()
+        let hasUppercaseLetter = core.unicodeScalars.contains { CharacterSet.uppercaseLetters.contains($0) }
+        let hasLowercaseLetter = core.unicodeScalars.contains { CharacterSet.lowercaseLetters.contains($0) }
+        let isAllCapsWord = hasUppercaseLetter && !hasLowercaseLetter
+        let isUnambiguousAcronym = part.contains(where: { $0.isNumber }) || part.contains("/") || part.contains("&") || part.contains(".")
+
+        if isAllCapsWord && (preserveUppercaseWords || isUnambiguousAcronym) {
+            return prefix + core + suffix
+        }
+        if !capitalize && apaMinorWords.contains(lowercasedCore) {
+            return prefix + lowercasedCore + suffix
+        }
+        return prefix + lowercasedCore.prefix(1).uppercased() + String(lowercasedCore.dropFirst()) + suffix
     }
 
     static func fileComponent(_ value: String) -> String {

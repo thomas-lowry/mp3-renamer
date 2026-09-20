@@ -1,17 +1,18 @@
 # MP3 Renamer
 
-A native macOS 14+ SwiftUI app for normalizing album metadata, embedding optional cover art, and renaming a folder's top-level MP3 files.
+## Build an installable app
 
-## Run
-
-Open this folder in Xcode and run the `MP3Renamer` scheme, or run:
+On macOS, run:
 
 ```sh
-swift run MP3Renamer
+./Scripts/package-app.sh
 ```
 
-## Notes
+This builds a universal (Apple Silicon and Intel) `MP3 Renamer.app` and an
+installable disk image at `dist/MP3 Renamer.dmg`. Open the DMG and drag the app
+to the included Applications shortcut. The package uses the light Figma icon in
+the Finder and Dock; the matching dark source export is retained in `Assets/`.
 
-- Folder images are converted to PNG and stored as `cover.png` when the batch is confirmed.
-- The app rewrites ID3v2.3 metadata with only title, artist, album, year, track number, and optional front-cover art.
-- `swift test` exercises filename formatting, capitalization behavior, and ID3 metadata write/read round-tripping.
+The first-release DMG is ad-hoc signed for local use. To distribute it publicly
+without Gatekeeper warnings, sign with an Apple Developer *Developer ID*
+certificate and notarize the DMG with Apple.

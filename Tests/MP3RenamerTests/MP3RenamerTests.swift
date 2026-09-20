@@ -7,9 +7,12 @@ import AppKit
     #expect(FilenameBuilder.filename(artist: "A/rtist", album: "Album", track: 3, title: "A: Song") == "A-rtist - Album - 03 - A- Song.mp3")
 }
 
-@Test func onlyAllCapsTextIsNormalized() {
-    #expect(TextSanitizer.sentenceCaseIfAllCaps("THE SONG") == "The song")
-    #expect(TextSanitizer.sentenceCaseIfAllCaps("AC/DC Live") == "AC/DC Live")
+@Test func metadataUsesAPATitleCase() {
+    #expect(TextSanitizer.apaTitleCase("the rise and fall of the MP3") == "The Rise and Fall of the MP3")
+    #expect(TextSanitizer.apaTitleCase("THE RISE AND FALL OF THE MP3") == "The Rise and Fall of the MP3")
+    #expect(TextSanitizer.apaTitleCase("AC/DC and the DIY guide") == "AC/DC and the DIY Guide")
+    #expect(TextSanitizer.apaTitleCase("state-of-the-art sound") == "State-of-the-Art Sound")
+    #expect(TextSanitizer.apaTitleCase("love: a song of the sea") == "Love: A Song of the Sea")
 }
 
 @Test func writingTagsReplacesExistingDataAndRoundTrips() throws {
